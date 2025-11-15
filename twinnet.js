@@ -1,122 +1,90 @@
-import * as tf from 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js';
+import * as tf from 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js';
 
 let model;
 
-const MODEL_WEIGHTS = {
-  modelTopology: {
-    "class_name": "Sequential",
-    "config": {
-      "name": "sequential_1",
-      "layers": [
-        {
-          "class_name": "Dense",
-          "config": {
-            "name": "dense_Dense1",
-            "trainable": true,
-            "batch_input_shape": [null, 36],
-            "dtype": "float32",
-            "units": 64,
-            "activation": "relu",
-            "use_bias": true
-          }
-        },
-        {
-          "class_name": "Dense",
-          "config": {
-            "name": "dense_Dense2",
-            "trainable": true,
-            "units": 32,
-            "activation": "relu",
-            "use_bias": true
-          }
-        },
-        {
-          "class_name": "Dense", 
-          "config": {
-            "name": "dense_Dense3",
-            "trainable": true,
-            "units": 32,
-            "activation": "sigmoid",
-            "use_bias": true
-          }
-        }
-      ]
-    },
-    "keras_version": "2.15.0",
-    "backend": "tensorflow"
-  },
-  format: "layers-model",
-  generatedBy: "TensorFlow.js tfjs-layers v4.15.0",
-  converterVersion": "1.15.0"
+const ENTANGLED_WEIGHTS = {
+  'dense/kernel': tf.randomNormal([33, 64]).arraySync(),
+  'dense/bias': tf.randomNormal([64]).arraySync(),
+  'dense_1/kernel': tf.randomNormal([64, 32]).arraySync(),
+  'dense_1/bias': tf.randomNormal([32]).arraySync()
 };
 
-export async function loadModel() {
+export async function loadTwin() {
   if (model) return model;
   
-  console.log('Loading quantum neural network model...');
-  
   try {
+    await tf.ready();
+    
+    // Validate ENTANGLED_WEIGHTS dimensions
+    const inputDim = ENTANGLED_WEIGHTS['dense/kernel'].length;
+    if (inputDim !== 33) {
+      throw new Error(`Invalid weight dimensions: expected 33, got ${inputDim}`);
+    }
+
     model = tf.sequential({
       layers: [
-        tf.layers.dense({
-          inputShape: [36],
-          units: 64,
-          activation: 'relu'
+        tf.layers.dense({ 
+          units: 64, 
+          activation: 'relu', 
+          inputShape: [33],
+          name: 'dense'
         }),
-        tf.layers.dense({
-          units: 32,
-          activation: 'relu'
-        }),
-        tf.layers.dense({
-          units: 32,
-          activation: 'sigmoid'
+        tf.layers.dense({ 
+          units: 32, 
+          activation: 'tanh',
+          name: 'dense_1'
         })
       ]
     });
+
+    // More robust weight setting
+    const weights = [
+      tf.tensor2d(ENTANGLED_WEIGHTS['dense/kernel'], [33, 64]),
+      tf.tensor1d(ENTANGLED_WEIGHTS['dense/bias']),
+      tf.tensor2d(ENTANGLED_WEIGHTS['dense_1/kernel'], [64, 32]),
+      tf.tensor1d(ENTANGLED_WEIGHTS['dense_1/bias'])
+    ];
     
-    model.compile({
-      optimizer: 'adam',
-      loss: 'meanSquaredError'
-    });
-    
-    const fixedWeights = [];
-    fixedWeights.push(tf.randomNormal([36, 64], 0, 0.1, 'float32', 42));
-    fixedWeights.push(tf.randomNormal([64], 0, 0.1, 'float32', 42));
-    fixedWeights.push(tf.randomNormal([64, 32], 0, 0.1, 'float32', 42));
-    fixedWeights.push(tf.randomNormal([32], 0, 0.1, 'float32', 42));
-    fixedWeights.push(tf.randomNormal([32, 32], 0, 0.1, 'float32', 42));
-    fixedWeights.push(tf.randomNormal([32], 0, 0.1, 'float32', 42));
-    
-    model.setWeights(fixedWeights);
-    
-    console.log('Quantum neural network model loaded successfully');
+    model.setWeights(weights);
+    console.log('TwinNet model loaded successfully');
     return model;
     
   } catch (error) {
-    console.error('Failed to load quantum model:', error);
+    console.error('Failed to load TwinNet:', error);
     throw error;
   }
 }
 
-export async function infer(inputData) {
+export function infer(seed) {
   if (!model) {
-    await loadModel();
+    throw new Error('Model not loaded. Call loadTwin() first.');
   }
   
-  try {
-    const inputArray = Array.from(inputData).map(x => x / 255.0);
-    const inputTensor = tf.tensor2d([inputArray]);
-    const outputTensor = model.predict(inputTensor);
-    const outputData = await outputTensor.data();
-    const uint8Array = new Uint8Array(outputData.map(x => Math.floor(x * 255)));
-    
-    inputTensor.dispose();
-    outputTensor.dispose();
-    
-    return uint8Array;
-    
-  } catch (error) {
-    console.error('Quantum inference failed:', error);
-    throw error;
+  if (seed.length !== 33) {
+    throw new Error(`Seed must be 33 elements, got ${seed.length}`);
   }
+
+  // Use tf.tidy for automatic memory cleanup
+  return tf.tidy(() => {
+    const input = tf.tensor2d([seed.map(v => v / 255)], [1, 33]);
+    const output = model.predict(input);
+    return Array.from(output.dataSync());
+  });
+}
+
+// Add model serialization for persistence
+export function getModelWeights() {
+  if (!model) return null;
+  return model.getWeights().map(w => w.arraySync());
+}
+
+// Add seed validation and generation utilities
+export function validateSeed(seed) {
+  return Array.isArray(seed) && 
+         seed.length === 33 && 
+         seed.every(v => v >= 0 && v <= 255);
+}
+
+export function generateRandomSeed() {
+  return Array.from({length: 33}, () => Math.floor(Math.random() * 256));
 }
