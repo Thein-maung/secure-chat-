@@ -1,167 +1,213 @@
-import { setSeed, nextPad, cryptoReady } from './crypto.js';
+import { setSeed } from './crypto.js';
 import { generateQR, startScan } from './qr.js';
 
-const chatDiv = document.getElementById('chat');
-const pairingDiv = document.getElementById('pairing');
-const loadingDiv = document.getElementById('loading');
-const errorDiv = document.getElementById('error');
-const twinStatus = document.getElementById('twinStatus');
+let currentSeed = crypto.getRandomValues(new Uint8Array(32));
+let isEntangled = false;
+let isInitialized = false;
 
-// Quantum particle system
-function createQuantumParticles() {
-  const container = document.getElementById('particle-container');
-  for (let i = 0; i < 15; i++) {
-    setTimeout(() => {
-      const particle = document.createElement('div');
-      particle.className = 'particle';
-      particle.style.left = Math.random() * 100 + 'vw';
-      particle.style.top = '100vh';
-      particle.style.animation = `particle-float ${2 + Math.random() * 3}s ease-in-out forwards`;
-      container.appendChild(particle);
-      
-      setTimeout(() => particle.remove(), 5000);
-    }, i * 150);
-  }
+const status = document.getElementById('status');
+const qrcvs = document.getElementById('qrcvs');
+const output = document.getElementById('output');
+const scanBtn = document.getElementById('scan');
+const regenSeedBtn = document.getElementById('regen-seed');
+const textBtn = document.getElementById('text-chat');
+const voiceBtn = document.getElementById('voice-chat');
+
+// Preload TensorFlow.js in background
+async function preloadTensorFlow() {
+    try {
+        // Load TensorFlow.js quietly in background
+        await import('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js');
+        console.log('TensorFlow.js preloaded');
+        return true;
+    } catch (error) {
+        console.error('TensorFlow preload failed:', error);
+        return false;
+    }
 }
 
-// Initialize app with quantum theme
-async function initApp() {
-  try {
-    loadingDiv.style.display = 'block';
-    twinStatus.textContent = 'Initializing...';
-    createQuantumParticles();
-    
-    console.log('🧠 Initializing Quantum AI Neural Network...');
-    await cryptoReady();
-    
-    loadingDiv.style.display = 'none';
-    twinStatus.textContent = 'Ready for Entanglement';
-    console.log('⚛️ Quantum AI ready for entanglement');
-    
-    // Continuous particle effects
-    setInterval(createQuantumParticles, 4000);
-    
-  } catch (error) {
-    loadingDiv.style.display = 'none';
-    showError(`Quantum collapse: ${error.message}`);
-    console.error('Entanglement failure:', error);
-  }
+// Enhanced QR generation with error handling
+async function showQR() {
+    try {
+        const seedB64 = btoa(String.fromCharCode(...currentSeed));
+        await QRCode.toCanvas(qrcvs, seedB64, { 
+            width: 200, // Smaller for faster rendering
+            margin: 1,
+            color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+            }
+        });
+        qrcvs.hidden = false;
+    } catch (error) {
+        console.error('QR generation failed:', error);
+        status.textContent = '❌ QR generation failed';
+        status.style.color = 'red';
+    }
 }
 
-function showError(message) {
-  errorDiv.textContent = `⚡ ${message}`;
-  errorDiv.style.display = 'block';
-  setTimeout(() => {
-    errorDiv.style.display = 'none';
-  }, 5000);
+// Improved initialization with progress updates
+async function initializeApp() {
+    try {
+        status.textContent = '🔄 Loading quantum network...';
+        
+        // Show QR immediately without waiting for TensorFlow
+        await showQR();
+        
+        // Start TensorFlow preload in background
+        const tfPromise = preloadTensorFlow();
+        
+        status.textContent = '📱 Ready - Scan or show QR';
+        status.style.color = 'blue';
+        output.textContent = 'Share your QR or scan your partner\'s';
+        
+        // Mark as initialized
+        isInitialized = true;
+        
+        // Check TensorFlow status in background
+        tfPromise.then(success => {
+            if (success) {
+                console.log('AI network ready');
+            } else {
+                console.warn('AI network loading failed, will load on demand');
+            }
+        });
+        
+    } catch (error) {
+        console.error('App initialization failed:', error);
+        status.textContent = '⚠️ Basic features ready';
+        status.style.color = 'orange';
+        output.textContent = 'Advanced features loading...';
+        isInitialized = true;
+    }
 }
 
-function showSuccess(message) {
-  document.getElementById('log').textContent = message;
-  createQuantumParticles();
-}
-
-function updateEntanglementStatus(entangled) {
-  if (entangled) {
-    twinStatus.textContent = '⚡ ENTANGLED';
-    twinStatus.style.color = '#00ff00';
-    createQuantumParticles();
-  } else {
-    twinStatus.textContent = 'Disentangled';
-    twinStatus.style.color = '#ff4444';
-  }
-}
-
-document.getElementById('genBtn').onclick = async () => {
-  try {
-    twinStatus.textContent = 'Creating entanglement...';
-    const seed = crypto.getRandomValues(new Uint8Array(32));
-    await setSeed(seed);
-    const seedBase64 = btoa(String.fromCharCode(...seed));
-    await generateQR(seedBase64);
-    
-    pairingDiv.hidden = true; 
-    chatDiv.hidden = false;
-    updateEntanglementStatus(true);
-    showSuccess('🌌 Quantum entanglement established!\n\nYour AI twin now exists elsewhere in the universe.\nAny message you encrypt will instantly decrypt on the entangled device.');
-    
-  } catch (error) {
-    showError(`Entanglement failed: ${error.message}`);
-    updateEntanglementStatus(false);
-  }
-};
-
-document.getElementById('scanBtn').onclick = async () => {
-  try {
-    twinStatus.textContent = 'Scanning for entanglement...';
-    await startScan(async (raw) => {
-      try {
-        const seed = new Uint8Array([...atob(raw)].map(c => c.charCodeAt(0)));
-        await setSeed(seed);
-        pairingDiv.hidden = true; 
-        chatDiv.hidden = false;
-        updateEntanglementStatus(true);
-        showSuccess('🔗 Quantum entanglement achieved!\n\nYou are now the twin AI. Any message from your entangled pair will decrypt instantly.');
-      } catch (error) {
-        showError(`Entanglement mismatch: ${error.message}`);
-        updateEntanglementStatus(false);
-      }
-    });
-  } catch (error) {
-    showError(`Quantum observation failed: ${error.message}`);
-    updateEntanglementStatus(false);
-  }
-};
-
-document.getElementById('sendBtn').onclick = async () => {
-  try {
-    const message = document.getElementById('txt').value;
-    if (!message.trim()) {
-      showError('Message waveform is empty');
-      return;
+// Enhanced scanning with better UX
+scanBtn.onclick = () => {
+    if (!isInitialized) {
+        showAlert('App still initializing, please wait...');
+        return;
     }
     
-    twinStatus.textContent = 'Collapsing wavefunction...';
-    const txt = new TextEncoder().encode(message);
-    const pad = await nextPad(txt.length);
-    const cip = txt.map((b, i) => b ^ pad[i]);
-    const ciphertext = btoa(String.fromCharCode(...cip));
+    status.textContent = '📷 Scanning...';
+    status.style.color = 'blue';
     
-    await navigator.clipboard.writeText(ciphertext);
-    showSuccess(`🌠 Message teleported (copied to clipboard):\n${ciphertext}\n\n📡 This ciphertext will instantly decrypt on your entangled AI twin anywhere in the universe.`);
-    document.getElementById('txt').value = '';
-    twinStatus.textContent = '⚡ ENTANGLED';
-    createQuantumParticles();
-    
-  } catch (error) {
-    showError(`Wavefunction collapse failed: ${error.message}`);
-  }
+    startScan(async data => {
+        try {
+            status.textContent = '🔐 Processing entanglement...';
+            
+            const bin = Uint8Array.from(atob(data), c => c.charCodeAt(0));
+            
+            if (bin.length !== 32) {
+                throw new Error('Invalid seed length');
+            }
+            
+            // Validate seed content
+            if (bin.every(byte => byte === 0)) {
+                throw new Error('Invalid seed (all zeros)');
+            }
+            
+            status.textContent = '🤖 Loading AI crypto...';
+            
+            currentSeed = bin;
+            await setSeed(bin);
+            isEntangled = true;
+            
+            status.textContent = '✅ Entangled!';
+            status.style.color = 'green';
+            output.textContent = 'Paired – Start chatting!';
+            
+            // Update QR to show we're now paired
+            await showQR();
+            
+            // Enable navigation immediately
+            enableNavigation(true);
+            
+        } catch (error) {
+            console.error('Scanning failed:', error);
+            status.textContent = `❌ ${error.message}`;
+            status.style.color = 'red';
+            output.textContent = 'Please try scanning again';
+        }
+    }, error => {
+        // Handle scanner errors
+        console.error('Scanner error:', error);
+        status.textContent = '❌ Scanner failed';
+        status.style.color = 'red';
+    });
 };
 
-document.getElementById('decBtn').onclick = async () => {
-  try {
-    const ciphertext = prompt('🔍 Paste the quantum-encrypted message (base64):');
-    if (!ciphertext) return;
-    
-    twinStatus.textContent = 'Observing quantum state...';
-    const cip = new Uint8Array([...atob(ciphertext)].map(c => c.charCodeAt(0)));
-    const pad = await nextPad(cip.length);
-    const txt = cip.map((b, i) => b ^ pad[i]);
-    const message = new TextDecoder().decode(txt);
-    
-    showSuccess(`📡 Message received from entangled twin:\n\n"${message}"\n\n⚛️ This message appeared instantly through quantum entanglement.`);
-    twinStatus.textContent = '⚡ ENTANGLED';
-    createQuantumParticles();
-    
-  } catch (error) {
-    showError(`Quantum observation failed: ${error.message}`);
-  }
+// Seed regeneration
+regenSeedBtn.onclick = () => {
+    currentSeed = crypto.getRandomValues(new Uint8Array(32));
+    isEntangled = false;
+    enableNavigation(false);
+    status.textContent = '🔄 New seed generated';
+    status.style.color = 'blue';
+    output.textContent = 'Scan or show the new QR code';
+    showQR();
 };
 
-initApp();
+// Better navigation handling
+function enableNavigation(enabled) {
+    textBtn.disabled = !enabled;
+    voiceBtn.disabled = !enabled;
+    
+    if (enabled) {
+        textBtn.style.opacity = '1';
+        voiceBtn.style.opacity = '1';
+    } else {
+        textBtn.style.opacity = '0.5';
+        voiceBtn.style.opacity = '0.5';
+    }
+}
 
+// Initialize navigation state
+enableNavigation(false);
+
+textBtn.onclick = () => {
+    if (!isEntangled) {
+        showAlert('Please entangle first by scanning a QR code!');
+        return;
+    }
+    location.href = 'chat.html';
+};
+
+voiceBtn.onclick = () => {
+    if (!isEntangled) {
+        showAlert('Please entangle first by scanning a QR code!');
+        return;
+    }
+    location.href = 'voice.html';
+};
+
+// Alert utility function
+function showAlert(message) {
+    // Use a better alert system or keep simple
+    alert(message);
+}
+
+// Start initialization when page loads
+window.addEventListener('load', initializeApp);
+
+// Export state for debugging
+window.getAppState = () => ({
+    isEntangled,
+    isInitialized,
+    seedLength: currentSeed.length,
+    seedPreview: Array.from(currentSeed.slice(0, 4))
+});
+
+// Service worker registration (non-blocking)
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js')
-    .then(registration => console.log('⚛️ Quantum service worker registered'))
-    .catch(error => console.log('❌ Quantum service registration failed'));
+    window.addEventListener('load', () => {
+        // Don't wait for service worker
+        navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+                console.log('SW registered: ', registration);
+            })
+            .catch(registrationError => {
+                console.log('SW registration failed: ', registrationError);
+            });
+    });
 }
