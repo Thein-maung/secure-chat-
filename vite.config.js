@@ -1,24 +1,13 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: './',
   build: {
-    outDir: 'dist',
-    assetsDir: 'assets',
-    sourcemap: false,
-    minify: 'terser',
+    target: 'es2020',
     rollupOptions: {
-      input: {
-        main: './index.html'
-      }
+      external: ['https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js']
     }
   },
-  server: {
-    host: true,
-    port: 3000,
-    open: true
-  },
-  preview: {
-    port: 3000
+  optimizeDeps: {
+    exclude: ['@tensorflow/tfjs']
   }
 });
