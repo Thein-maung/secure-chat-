@@ -1,5 +1,20 @@
 {
+  "name": "entangle-chat-2",
+  "version": "2.0.0",
+  "description": "Quantum-inspired secure PWA for private text & voice chat",
+  "type": "module",
   "scripts": {
-    "build": "echo 'No build needed'"
-  }
+    "dev": "python3 -m http.server 8000",
+    "build": "mkdir -p dist && cp *.html *.js *.css dist/ 2>/dev/null || true"
+  },
+  "keywords": [
+    "quantum",
+    "encryption",
+    "chat",
+    "pwa",
+    "security",
+    "privacy"
+  ],
+  "author": "Entangle Chat Team",
+  "license": "MIT"
 }
