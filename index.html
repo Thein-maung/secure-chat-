@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Quantum-Entangled AI Chat</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Two AI models entangled across any distance - secure instant messaging without networks">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .quantum-effect {
+      background: linear-gradient(45deg, #000428, #004e92, #000428);
+      background-size: 400% 400%;
+      animation: quantum-pulse 8s ease infinite;
+    }
+    @keyframes quantum-pulse {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .entanglement-status {
+      text-align: center;
+      margin: 10px 0;
+      font-size: 0.9em;
+      opacity: 0.8;
+    }
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: #0ff;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+    }
+    .quantum-loader {
+      width: 40px;
+      height: 40px;
+      border: 3px solid transparent;
+      border-top: 3px solid #00ffff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes particle-float {
+      0% { transform: translateY(0) translateX(0); opacity: 0; }
+      50% { opacity: 1; }
+      100% { transform: translateY(-100px) translateX(20px); opacity: 0; }
+    }
+  </style>
+</head>
+<body class="quantum-effect">
+  <div id="particle-container"></div>
+  
+  <h1>🧠 Quantum-Entangled AI Chat</h1>
+  <div class="entanglement-status" id="entanglementStatus">
+    ⚛️ AI Twins: <span id="twinStatus">Disentangled</span>
+  </div>
+  
+  <div id="loading" class="loading">
+    <div class="quantum-loader"></div>
+    Initializing Quantum AI Neural Network...
+  </div>
+  
+  <div id="error" class="error"></div>
+
+  <div id="pairing">
+    <div class="quantum-concept">
+      <h3>⚡ Create Quantum Entanglement</h3>
+      <p>Generate an entangled AI pair or scan to become the twin</p>
+    </div>
+    <button id="genBtn">🧬 CREATE ENTANGLED PAIR</button>
+    <button id="scanBtn">📡 BECOME QUANTUM TWIN</button>
+    <canvas id="qrcvs"></canvas>
+    <video id="cam" playsinline></video>
+  </div>
+
+  <div id="chat" hidden>
+    <div class="quantum-concept">
+      <h3>💫 Instant Quantum Communication</h3>
+      <p>Your messages appear instantly on the entangled twin, anywhere in the universe</p>
+    </div>
+    <textarea id="txt" maxlength="140" placeholder="Type your quantum message..."></textarea>
+    <button id="sendBtn">🌌 ENCRYPT & TELEPORT</button>
+    <button id="decBtn">🔍 DECRYPT WAVEFUNCTION</button>
+    <div class="output-section">
+      <h3>Quantum State Output:</h3>
+      <pre id="log"></pre>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "quantum-entangled-ai-chat",
+  "version": "1.0.0",
+  "description": "Two AI models entangled across any distance - instant secure messaging without networks",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs": "^4.15.0"
+  },
+  "devDependencies": {
+    "vite": "^4.5.0"
+  },
+  "keywords": ["quantum", "entanglement", "ai", "chat", "pwa", "offline"],
+  "author": "Quantum AI Labs",
+  "license": "MIT"
+}
